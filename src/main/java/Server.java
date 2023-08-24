@@ -72,7 +72,8 @@ public class Server {
         try {
             out.write((
                     "HTTP/1.1 404 Not Found\r\n" +
-	@@ -73,38 +77,136 @@ public static void notFound(BufferedOutputStream out) {
+                            "Content-Length: 0\r\n" +
+                            "Connection: close\r\n" +
                             "\r\n"
             ).getBytes());
             out.flush();
@@ -89,7 +90,7 @@ public class Server {
             final var buffer = new byte[limit];
             final var read = in.read(buffer);
 
-            // ищем request line
+            // find request line
             final var requestLineDelimiter = new byte[]{'\r', '\n'};
             final var requestLineEnd = indexOf(buffer, requestLineDelimiter, 0, read);
             if (requestLineEnd == -1) {
@@ -97,7 +98,7 @@ public class Server {
                 continue;
             }
 
-            // читаем request line
+            // read request line
             final var requestLine = new String(Arrays.copyOf(buffer, requestLineEnd)).split(" ");
             if (requestLine.length != 3) {
                 badRequest(out);
@@ -117,7 +118,7 @@ public class Server {
             }
             System.out.println(path);
 
-            // ищем заголовки
+            // find title
             final var headersDelimiter = new byte[]{'\r', '\n', '\r', '\n'};
             final var headersStart = requestLineEnd + requestLineDelimiter.length;
             final var headersEnd = indexOf(buffer, headersDelimiter, headersStart, read);
@@ -125,16 +126,16 @@ public class Server {
                 badRequest(out);
                 continue;
             }
-            // отматываем на начало буфера
+            // clear buf
             in.reset();
-            // пропускаем requestLine
+            // skip requestLine
             in.skip(headersStart);
 
             final var headersBytes = in.readNBytes(headersEnd - headersStart);
             final var headers = Arrays.asList(new String(headersBytes).split("\r\n"));
             System.out.println(headers);
 
-            // для GET тела нет
+            
             final var contentType = extractHeader(headers, "Content-Type");
             final var contentLength = extractHeader(headers, "Content-Length");
             URI url = new URI(requestLine[1]);
@@ -209,9 +210,11 @@ public class Server {
             out.write((
                     "HTTP/1.1 200 OK\r\n" +
                             "Content-Type: " + mimeType + "\r\n" +
-	@@ -114,13 +216,10 @@ public static void isOk(String mimeType, long length, Path filePath, BufferedOut
+                            "Content-Length: " + length + "\r\n" +
+                            "Connection: close\r\n" +
+                            "\r\n"
             ).getBytes());
             Files.copy(filePath, out);
             out.flush();
         }
- }
+}
